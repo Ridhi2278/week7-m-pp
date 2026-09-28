@@ -6,5 +6,7 @@ export default defineConfig({
     environment: "node",
     fileParallelism: false,
     testTimeout: 20000,
+
+    include: ["tests/**/*.test.js"],
   },
 });
