@@ -24,6 +24,10 @@ const createProduct = async (req, res) => {
     res.status(201).json(newProduct);
   } catch (error) {
     console.error("Error creating product:", error);
+    if (error.name === "ValidationError"){
+      return res.status(400).json({ error: error.message});
+      
+    }
     res.status(500).json({ error: "Server Error" });
   }
 };

@@ -3,6 +3,7 @@ const supertest = require("supertest");
 const app = require("../app");
 const connectDB = require("../config/db");
 const Product = require("../models/productModel");
+const User = require("../models/userModel");
 
 const api = supertest(app);
 
@@ -35,13 +36,35 @@ const products = [
   },
 ];
 
+let token = null;
+
 beforeAll(async () => {
   await connectDB();
+  await User.deleteMany({});
+  const signupRes = await api
+    .post("/api/users/signup")
+    .send({
+      name: "Product Tester",
+      email: "product.tester@example.com",
+      password: "Testing123!",
+      phone_number: "+358401112222",
+      gender: "female",
+      date_of_birth: "1998-03-10",
+      membership_status: "active",
+    })
+    .expect(201);
+  token = signupRes.body.token;
 });
 
 beforeEach(async () => {
   await Product.deleteMany({});
-  await Product.insertMany(products);
+  for (const product of products) {
+    await api
+      .post("/api/products")
+      .set("Authorization", `Bearer ${token}`)
+      .send(product)
+      .expect(201);
+  }
 });
 
 afterAll(async () => {
@@ -51,7 +74,6 @@ afterAll(async () => {
 describe("GET /api/products", () => {
   it("should return all products", async () => {
     const response = await api.get("/api/products").expect(200);
-
     expect(response.body).toHaveLength(products.length);
   });
 
@@ -64,7 +86,6 @@ describe("GET /api/products", () => {
 
   it("should include a specific product in the returned list", async () => {
     const response = await api.get("/api/products");
-
     expect(response.body.map((product) => product.title)).toContain(
       "Wireless Mouse"
     );
@@ -87,8 +108,11 @@ describe("POST /api/products", () => {
           rating: 5,
         },
       };
-
-      await api.post("/api/products").send(newProduct).expect(201);
+      await api
+        .post("/api/products")
+        .set("Authorization", `Bearer ${token}`)
+        .send(newProduct)
+        .expect(201);
     });
 
     it("should persist the new product in the database", async () => {
@@ -105,11 +129,12 @@ describe("POST /api/products", () => {
           rating: 5,
         },
       };
-
-      await api.post("/api/products").send(newProduct).expect(201);
-
+      await api
+        .post("/api/products")
+        .set("Authorization", `Bearer ${token}`)
+        .send(newProduct)
+        .expect(201);
       const productsAfterPost = await Product.find({});
-
       expect(productsAfterPost).toHaveLength(products.length + 1);
       expect(productsAfterPost.map((product) => product.title)).toContain(
         newProduct.title
@@ -131,8 +156,11 @@ describe("POST /api/products", () => {
           rating: 3,
         },
       };
-
-      await api.post("/api/products").send(invalidProduct).expect(400);
+      await api
+        .post("/api/products")
+        .set("Authorization", `Bearer ${token}`)
+        .send(invalidProduct)
+        .expect(400);
     });
 
     it("should not increase the number of products in the database", async () => {
@@ -148,11 +176,12 @@ describe("POST /api/products", () => {
           rating: 3,
         },
       };
-
-      await api.post("/api/products").send(invalidProduct).expect(400);
-
+      await api
+        .post("/api/products")
+        .set("Authorization", `Bearer ${token}`)
+        .send(invalidProduct)
+        .expect(400);
       const productsAtEnd = await Product.find({});
-
       expect(productsAtEnd).toHaveLength(products.length);
     });
   });
@@ -162,12 +191,10 @@ describe("GET /api/products/:productId", () => {
   describe("when the id is valid", () => {
     it("should return one product by ID", async () => {
       const product = await Product.findOne();
-
       const response = await api
         .get(`/api/products/${product._id}`)
         .expect(200)
         .expect("Content-Type", /application\/json/);
-
       expect(response.body.title).toBe(product.title);
     });
   });
@@ -175,7 +202,6 @@ describe("GET /api/products/:productId", () => {
   describe("when the id does not exist", () => {
     it("should return status 404", async () => {
       const nonExistentId = new mongoose.Types.ObjectId();
-
       await api.get(`/api/products/${nonExistentId}`).expect(404);
     });
   });
@@ -191,9 +217,9 @@ describe("PUT /api/products/:productId", () => {
   describe("when the id is valid", () => {
     it("should return status 200", async () => {
       const product = await Product.findOne();
-
       await api
         .put(`/api/products/${product._id}`)
+        .set("Authorization", `Bearer ${token}`)
         .send({
           description: "Updated description",
           stockQuantity: 42,
@@ -203,19 +229,16 @@ describe("PUT /api/products/:productId", () => {
 
     it("should persist the updated fields in the database", async () => {
       const product = await Product.findOne();
-
       const updates = {
         description: "Updated description",
         stockQuantity: 42,
       };
-
       await api
         .put(`/api/products/${product._id}`)
+        .set("Authorization", `Bearer ${token}`)
         .send(updates)
         .expect(200);
-
       const updatedProduct = await Product.findById(product._id);
-
       expect(updatedProduct.description).toBe(updates.description);
       expect(updatedProduct.stockQuantity).toBe(updates.stockQuantity);
     });
@@ -223,7 +246,11 @@ describe("PUT /api/products/:productId", () => {
 
   describe("when the id is invalid", () => {
     it("should return status 404", async () => {
-      await api.put("/api/products/12345").send({}).expect(404);
+      await api
+        .put("/api/products/12345")
+        .set("Authorization", `Bearer ${token}`)
+        .send({})
+        .expect(404);
     });
   });
 });
@@ -232,24 +259,29 @@ describe("DELETE /api/products/:productId", () => {
   describe("when the id is valid", () => {
     it("should return status 204", async () => {
       const product = await Product.findOne();
-
-      await api.delete(`/api/products/${product._id}`).expect(204);
+      await api
+        .delete(`/api/products/${product._id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(204);
     });
 
     it("should remove the product from the database", async () => {
       const product = await Product.findOne();
-
-      await api.delete(`/api/products/${product._id}`).expect(204);
-
+      await api
+        .delete(`/api/products/${product._id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(204);
       const deletedProduct = await Product.findById(product._id);
-
       expect(deletedProduct).toBeNull();
     });
   });
 
   describe("when the id is invalid", () => {
     it("should return status 404", async () => {
-      await api.delete("/api/products/12345").expect(404);
+      await api
+        .delete("/api/products/12345")
+        .set("Authorization", `Bearer ${token}`)
+        .expect(404);
     });
   });
 });
