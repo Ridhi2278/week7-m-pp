@@ -1,93 +1,97 @@
-const Product = require('../models/productModel');
-const mongoose = require('mongoose');
+const Product = require("../models/productModel");
 
-// GET /api/products
+// GET all products
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ createdAt: -1 });
+    const products = await Product.find({});
     res.status(200).json(products);
   } catch (error) {
-    console.error("Error fetching products:", error);
-    res.status(500).json({ error: "Server Error" });
+    console.error("Error getting products:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-// POST /api/products
+// POST create product
 const createProduct = async (req, res) => {
   try {
-    const user_id = req.user._id;
-    const newProduct = new Product({
+    const product = await Product.create({
       ...req.body,
-      user_id,
+      user_id: req.user._id,
     });
-    await newProduct.save();
-    res.status(201).json(newProduct);
+
+    res.status(201).json(product);
   } catch (error) {
     console.error("Error creating product:", error);
+<<<<<<< Updated upstream
     if (error.name === "ValidationError"){
       return res.status(400).json({ error: error.message});
       
     }
     res.status(500).json({ error: "Server Error" });
+=======
+    res.status(400).json({ error: error.message });
+>>>>>>> Stashed changes
   }
 };
 
-// GET /api/products/:productId
+// GET one product
 const getProductById = async (req, res) => {
-  const { productId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    return res.status(404).json({ error: 'No such product' });
-  }
   try {
+    const { productId } = req.params;
+
     const product = await Product.findById(productId);
+
     if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+      return res.status(404).json({ error: "Product not found" });
     }
+
     res.status(200).json(product);
   } catch (error) {
-    console.error("Error fetching product:", error);
-    res.status(500).json({ error: "Server Error" });
+    console.error("Error getting product:", error);
+    res.status(404).json({ error: "Product not found" });
   }
 };
 
-// PUT /api/products/:productId
+// PUT update product
 const updateProduct = async (req, res) => {
-  const { productId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    return res.status(404).json({ error: 'No such product' });
-  }
   try {
-    const product = await Product.findOneAndUpdate(
-      { _id: productId },
-      { ...req.body },
-      // { new: true } //this option is now deprecated.     
-      { returnDocument: 'after' }, //This is the new, preferred option 
+    const { productId } = req.params;
+
+    const product = await Product.findByIdAndUpdate(
+      productId,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
     );
+
     if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+      return res.status(404).json({ error: "Product not found" });
     }
+
     res.status(200).json(product);
   } catch (error) {
     console.error("Error updating product:", error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(404).json({ error: "Product not found" });
   }
 };
 
-// DELETE /api/products/:productId
+// DELETE product
 const deleteProduct = async (req, res) => {
-  const { productId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    return res.status(404).json({ error: 'No such product' });
-  }
   try {
-    const product = await Product.findOneAndDelete({ _id: productId });
+    const { productId } = req.params;
+
+    const product = await Product.findByIdAndDelete(productId);
+
     if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+      return res.status(404).json({ error: "Product not found" });
     }
+
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting product:", error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(404).json({ error: "Product not found" });
   }
 };
 

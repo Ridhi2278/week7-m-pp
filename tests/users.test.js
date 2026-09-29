@@ -31,11 +31,14 @@ afterAll(async () => {
 describe("POST /api/users/signup", () => {
   describe("when the payload is valid", () => {
     it("should return status 201", async () => {
-      await api
+      const response = await api
         .post("/api/users/signup")
-        .send(validUser)
-        .expect(201)
-        .expect("Content-Type", /json/);
+        .send(validUser);
+
+      console.log("SIGNUP RESPONSE:", response.status, response.body);
+
+      expect(response.status).toBe(201);
+      expect(response.headers["content-type"]).toMatch(/json/);
     });
 
     it("should return an email and token", async () => {

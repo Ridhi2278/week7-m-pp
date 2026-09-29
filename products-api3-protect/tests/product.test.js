@@ -1,14 +1,24 @@
 const mongoose = require("mongoose");
+
 const supertest = require("supertest");
+
 const app = require("../app");
+
 const connectDB = require("../config/db");
+
 const Product = require("../models/productModel");
+const User = require("../models/userModel");
+
 const User = require("../models/userModel");
 
 const api = supertest(app);
 
+let token;
+let testUserId;
+
 const products = [
   {
+    user_id: null,
     title: "Wireless Mouse",
     category: "Electronics",
     description: "Ergonomic wireless mouse with USB receiver.",
@@ -22,6 +32,7 @@ const products = [
     },
   },
   {
+    user_id: null,
     title: "Standing Desk",
     category: "Furniture",
     description: "Adjustable height standing desk.",
@@ -40,6 +51,7 @@ let token = null;
 
 beforeAll(async () => {
   await connectDB();
+<<<<<<< Updated upstream
   await User.deleteMany({});
   const signupRes = await api
     .post("/api/users/signup")
@@ -54,10 +66,36 @@ beforeAll(async () => {
     })
     .expect(201);
   token = signupRes.body.token;
+=======
+
+  await User.deleteMany({});
+
+  const response = await api.post("/api/users/signup").send({
+    name: "Test User",
+    email: "test@example.com",
+    password: "TestPassword123!",
+    phone_number: "0401234567",
+    gender: "Other",
+    date_of_birth: "1995-01-01",
+    membership_status: "active",
+  });
+
+  token = response.body.token;
+
+  const user = await User.findOne({
+    email: "test@example.com",
+  });
+
+  testUserId = user._id;
+
+  products[0].user_id = testUserId;
+  products[1].user_id = testUserId;
+>>>>>>> Stashed changes
 });
 
 beforeEach(async () => {
   await Product.deleteMany({});
+<<<<<<< Updated upstream
   for (const product of products) {
     await api
       .post("/api/products")
@@ -65,6 +103,10 @@ beforeEach(async () => {
       .send(product)
       .expect(201);
   }
+=======
+
+  await Product.insertMany(products);
+>>>>>>> Stashed changes
 });
 
 afterAll(async () => {
@@ -108,6 +150,10 @@ describe("POST /api/products", () => {
           rating: 5,
         },
       };
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       await api
         .post("/api/products")
         .set("Authorization", `Bearer ${token}`)
@@ -129,13 +175,22 @@ describe("POST /api/products", () => {
           rating: 5,
         },
       };
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       await api
         .post("/api/products")
         .set("Authorization", `Bearer ${token}`)
         .send(newProduct)
         .expect(201);
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       const productsAfterPost = await Product.find({});
       expect(productsAfterPost).toHaveLength(products.length + 1);
+
       expect(productsAfterPost.map((product) => product.title)).toContain(
         newProduct.title
       );
@@ -156,6 +211,10 @@ describe("POST /api/products", () => {
           rating: 3,
         },
       };
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       await api
         .post("/api/products")
         .set("Authorization", `Bearer ${token}`)
@@ -176,11 +235,19 @@ describe("POST /api/products", () => {
           rating: 3,
         },
       };
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       await api
         .post("/api/products")
         .set("Authorization", `Bearer ${token}`)
         .send(invalidProduct)
         .expect(400);
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       const productsAtEnd = await Product.find({});
       expect(productsAtEnd).toHaveLength(products.length);
     });
@@ -259,6 +326,10 @@ describe("DELETE /api/products/:productId", () => {
   describe("when the id is valid", () => {
     it("should return status 204", async () => {
       const product = await Product.findOne();
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       await api
         .delete(`/api/products/${product._id}`)
         .set("Authorization", `Bearer ${token}`)
@@ -267,10 +338,18 @@ describe("DELETE /api/products/:productId", () => {
 
     it("should remove the product from the database", async () => {
       const product = await Product.findOne();
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       await api
         .delete(`/api/products/${product._id}`)
         .set("Authorization", `Bearer ${token}`)
         .expect(204);
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
       const deletedProduct = await Product.findById(product._id);
       expect(deletedProduct).toBeNull();
     });
