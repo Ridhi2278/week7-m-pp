@@ -6,7 +6,13 @@ const Product = require("../models/productModel");
 
 const api = supertest(app);
 
-// starting data jo har test se pehle database me jayega
+
+
+
+
+
+
+
 const startProducts = [
   {
     title: "Gaming Headset",
@@ -36,18 +42,25 @@ const startProducts = [
   },
 ];
 
+
 beforeAll(async () => {
   await connectDB();
 });
 
+
+
 beforeEach(async () => {
   await Product.deleteMany({});
   await Product.insertMany(startProducts);
+
 });
+
+
 
 afterAll(async () => {
   await mongoose.connection.close();
 });
+
 
 describe("GET /api/products", () => {
   it("should return all products", async () => {
@@ -70,6 +83,8 @@ describe("GET /api/products", () => {
     expect(titles).toContain("Gaming Headset");
   });
 });
+
+
 
 describe("POST /api/products", () => {
   describe("when the payload is valid", () => {
